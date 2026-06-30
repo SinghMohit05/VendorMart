@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track your VendorMart orders and pickup status.">
+    <title>My Orders | VendorMart</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand">VendorMart</a>
+        <div class="nav-links" id="nav-container" style="display: flex; gap: 1rem; align-items: center;">
+            <div id="guest-links">
+                <a href="login.html">Login / Register</a>
+            </div>
+            <div id="user-links" class="hidden" style="display: flex; gap: 1rem; align-items: center;">
+                <span id="user-name" style="font-weight: 600; color: var(--primary);"></span>
+                <a href="wishlist.html">❤️ Wishlist</a>
+                <a href="orders.html">📦 Orders</a>
+                <button onclick="logout()" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 9999px;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.3rem;">
+            <span style="font-size: 2rem;">📦</span>
+            <h1 style="margin: 0;">My Orders</h1>
+        </div>
+        <p id="orders-subtitle" style="color: var(--text-muted); margin-bottom: 2rem;">Track your recent purchases and pickup status</p>
+        
+        <div id="orders-list">
+            <!-- Orders load here -->
+        </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="rating-modal">
+        <div class="rating-modal-overlay" onclick="closeRatingModal()"></div>
+        <div class="rating-modal-content">
+            <button class="rating-close" onclick="closeRatingModal()">&times;</button>
+            <div style="font-size: 3rem; margin-bottom: 1rem;">⭐</div>
+            <h2 style="margin-bottom: 0.5rem;">Rate Your Experience</h2>
+            <p style="color: var(--text-muted);">How was your experience with <span id="ratingVendorName" class="rating-vendor-name"></span>?</p>
+            
+            <div class="stars-container" id="starsContainer">
+                <span class="star-input" data-value="1" onclick="selectStar(1)">★</span>
+                <span class="star-input" data-value="2" onclick="selectStar(2)">★</span>
+                <span class="star-input" data-value="3" onclick="selectStar(3)">★</span>
+                <span class="star-input" data-value="4" onclick="selectStar(4)">★</span>
+                <span class="star-input" data-value="5" onclick="selectStar(5)">★</span>
+            </div>
+
+            <input type="hidden" id="selectedRating" value="5">
+            <input type="hidden" id="currentRatingVendorId" value="">
+
+            <button class="rating-submit-btn" onclick="submitRating()">
+                Post Review
+            </button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 VendorMart — Compare. Save. Shop Local.</p>
+    </footer>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) window.location.href = "login.html";
+
+        // ================= RATING MODAL LOGIC =================
+        function rateVendor(vendorId, vendorName) {
+            document.getElementById('currentRatingVendorId').value = vendorId;
+            document.getElementById('ratingVendorName').innerText = vendorName;
+            document.getElementById('ratingModal').classList.add('show');
+            selectStar(5); // Default to 5 stars
+        }
+
+        function closeRatingModal() {
+            document.getElementById('ratingModal').classList.remove('show');
+        }
+
+        function selectStar(value) {
+            document.getElementById('selectedRating').value = value;
+            const stars = document.querySelectorAll('.star-input');
+            stars.forEach(star => {
+                const starValue = parseInt(star.getAttribute('data-value'));
+                if (starValue <= value) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        async function submitRating() {
+            const vendorId = document.getElementById('currentRatingVendorId').value;
+            const rating = document.getElementById('selectedRating').value;
+            const btn = document.querySelector('.rating-submit-btn');
+            
+            btn.innerText = 'Submitting...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('http://localhost:5000/rate-vendor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vendor_id: vendorId, rating: rating })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('Thank you for your rating!', 'success');
+                    closeRatingModal();
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (err) {
+                console.error("Rate vendor error:", err);
+                showToast('Connection error', 'error');
+            } finally {
+                btn.innerText = 'Post Review';
+                btn.disabled = false;
+            }
+        }
+        // ================= END RATING LOGIC =================
+
+        async function loadOrders() {
+            try {
+                const res = await fetch(`http://localhost:5000/orders/${user.user_id}`);
+                const orders = await res.json();
+                renderOrders(orders);
+            } catch (err) {
+                console.error("Load orders error:", err);
+                document.getElementById("orders-list").innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h3>Connection Error</h3>
+                        <p>Unable to load your orders.</p>
+                        <button onclick="loadOrders()">🔄 Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderOrders(orders) {
+            const container = document.getElementById("orders-list");
+            if (!orders.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🛍️</div>
+                        <h3>No Orders Yet</h3>
+                        <p>You haven't placed any orders. Start shopping!</p>
+                        <button onclick="window.location.href='index.html'">Browse Products →</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const statusSteps = ["CONFIRMED", "READY FOR PICKUP", "PICKED UP"];
+
+            container.innerHTML = "";
+            orders.forEach((o, idx) => {
+                // Map status:
+                // PAID -> CONFIRMED (0)
+                // SHIPPED -> READY FOR PICKUP (1)
+                // DELIVERED -> PICKED UP (2)
+                
+                let currentIndex = 0; 
+                if (o.delivery_status === 'DELIVERED') currentIndex = 2;
+                else if (o.delivery_status === 'SHIPPED') currentIndex = 1;
+                else currentIndex = 0;
+
+                const card = `
+                    <div class="order-card" style="animation-delay: ${idx * 0.1}s;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
+                                    <h3 style="margin: 0;">Order #${o.order_id}</h3>
+                                    ${o.expected_date.includes('Today') ? '<span style="padding: 0.3rem 0.7rem; font-size: 0.75rem; background: linear-gradient(135deg, #fff7ed, #ffedd5); border-left: 4px solid #f97316; color: #c2410b; border-radius: var(--radius-sm); font-weight: 600;">⚡ Quick Pickup</span>' : ''}
+                                </div>
+                                <p style="font-size: 0.9rem; color: var(--text-muted);">Pick up from: <strong>${o.vendor_name || 'Local Vendor'}</strong> <span style="font-size: 0.8rem; color: var(--primary); margin-left: 0.5rem; opacity: 0.8;">(${o.vendor_email})</span></p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.3rem; font-weight: 800; color: var(--primary);">₹${o.total_amount.toLocaleString()}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">${o.order_date}</div>
+                                <div style="margin-top: 0.5rem; display: flex; gap: 0.4rem; justify-content: flex-end;">
+                                    <span style="font-size: 0.65rem; background: #f3f4f6; color: var(--text-main); padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">💳 ${o.payment_method || 'UPI'}</span>
+                                    <span style="font-size: 0.65rem; background: #ecfdf5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">✓ ${o.payment_status || 'PAID'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="status-stepper">
+                            ${statusSteps.map((s, i) => `
+                                <div class="step ${i < currentIndex ? 'completed' : (i === currentIndex ? 'active' : '')}" style="flex: 1;">
+                                    <div class="circle">${i < currentIndex ? '✓' : i + 1}</div>
+                                    <div class="label" style="font-size: 0.65rem;">${s}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Expected Ready Time: <strong style="color: var(--text-main);">${o.expected_date}</strong></span>
+                                <span style="font-size: 0.75rem; background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #16a34a; padding: 0.1rem 0.6rem; border-radius: var(--radius-full); font-weight: 600; border: 1px solid #bbf7d0; width: fit-content;">🏪 Self-Pickup</span>
+                            </div>
+                            
+                            <button onclick="rateVendor(${o.vendor_id}, '${o.vendor_name}')" style="padding: 0.5rem 1.2rem; font-size: 0.8rem; background: var(--bg-dark); color: white; border-radius: var(--radius-md); font-weight: 600;">
+                                ⭐ Rate Vendor
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        loadOrders();
+    </script>
+</body>
+</html>

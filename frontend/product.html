@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compare vendor prices for products on VendorMart.">
+    <title>Product Details | VendorMart</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand">VendorMart</a>
+        <div class="nav-links" style="display: flex; gap: 1rem; align-items: center;">
+            <div id="guest-links">
+                <a href="login.html">Login / Register</a>
+            </div>
+            <div id="user-links" class="hidden" style="display: flex; gap: 1rem; align-items: center;">
+                <span id="user-name" style="font-weight: 600; color: var(--primary);"></span>
+                <a href="wishlist.html">❤️ Wishlist</a>
+                <button onclick="logout()" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 9999px;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div style="margin-bottom: 1.5rem;">
+            <a href="index.html" style="color: var(--primary); text-decoration: none; font-weight: 500; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.3s;">
+                ← Back to Products
+            </a>
+        </div>
+        <div class="product-split">
+            <div class="left-panel">
+                <h1 id="name"></h1>
+                <p id="desc"></p>
+            </div>
+            
+            <div class="right-panel">
+                <h2 style="border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🏪 Available Vendors</h2>
+                <div id="vendors" style="margin-top: 1.5rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 VendorMart — Compare. Save. Shop Local.</p>
+    </footer>
+
+    <script>
+        const id = new URLSearchParams(window.location.search).get("id");
+
+        async function load() {
+            const city = localStorage.getItem('userCity') || 'Mumbai';
+            const res = await fetch(`http://localhost:5000/products/${id}/prices?city=${city}`);
+            const data = await res.json();
+
+            document.getElementById("name").innerText = data.product.name;
+            document.getElementById("desc").innerText = data.product.Description || "";
+
+            const container = document.getElementById("vendors");
+
+            if (!data.vendor_prices || data.vendor_prices.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 2rem; background: var(--glass-bg); border-radius: var(--radius-md); border: 1px dashed var(--border-color); text-align: center;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 1rem;">🏢</span>
+                        <h3 style="color: var(--text-main); margin-bottom: 0.5rem;">No Vendors Found</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">This product is not available with any local vendors in ${city}.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const uniqueVendors = {};
+            data.vendor_prices.forEach(v => {
+                if (!uniqueVendors[v.vendor_name] || v.final_price < uniqueVendors[v.vendor_name].final_price) {
+                    uniqueVendors[v.vendor_name] = v;
+                }
+            });
+
+            const vendorsArray = Object.values(uniqueVendors);
+            const minPrice = Math.min(...vendorsArray.map(v => v.final_price));
+
+            vendorsArray.sort((a, b) => a.final_price - b.final_price).forEach((v, idx) => {
+                const isBestPrice = v.final_price === minPrice;
+                const ratingNum = v.rating ? parseFloat(v.rating).toFixed(1) : "New";
+                let stars = v.rating ? "⭐".repeat(Math.round(v.rating)) + "☆".repeat(5 - Math.round(v.rating)) : "No reviews";
+
+                let stockClass = "stock-out";
+                let stockText = "Out of Stock";
+                if (v.stock > 10) {
+                    stockClass = "stock-in";
+                    stockText = "In Stock";
+                } else if (v.stock > 0) {
+                    stockClass = "stock-low";
+                    stockText = `Low Stock (${v.stock} left)`;
+                }
+
+                let priceHtml = `<div class="final-price" style="font-size: 1.2rem;">₹${v.price}</div>`;
+                if (v.discount_percentage > 0) {
+                    priceHtml = `
+                    <div class="price-box" style="justify-content: flex-end; margin: 0;">
+                        <span class="original-price">₹${v.price}</span>
+                        <span class="final-price" style="font-size: 1.2rem;">₹${v.final_price}</span>
+                    </div>`;
+                }
+
+                container.innerHTML += `
+            <div class="product-card" style="margin-bottom: 0.8rem; border: 2px solid ${isBestPrice ? 'var(--secondary)' : 'var(--border-color)'}; padding: 1rem; animation-delay: ${idx * 0.1}s;">
+                <div style="display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; width: 100%;">
+                    <div style="flex: 1; min-width: 150px;">
+                        <div style="font-weight: 700; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                            ${v.vendor_name}
+                            ${isBestPrice ? '<span class="best-price-alert" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; margin: 0; display: inline-block;">🏆 Best Price</span>' : ''}
+                        </div>
+                        <div class="rating-box" style="margin: 0;">${stars} <span class="rating-text">(${ratingNum})</span></div>
+                    </div>
+                    
+                    <div style="flex: 1; text-align: center;">
+                        <div class="stock-badge ${stockClass}" style="margin: 0;">${stockText}</div>
+                        ${v.discount_percentage > 0 ? `<div class="discount-badge" style="margin-top:0.3rem;">${v.discount_percentage}% OFF</div>` : ''}
+                    </div>
+
+                    <div style="flex: 1; text-align: right;">
+                        ${priceHtml}
+                    </div>
+                </div>
+                ${isBestPrice ? `
+                <div style="font-size: 0.78rem; color: var(--secondary); font-weight: 600; margin-top: 0.3rem;">
+                    ✨ Save the most by choosing this vendor!
+                </div>` : ''}
+            </div>
+        `;
+            });
+        }
+
+        load();
+    </script>
+
+</body>
+</html>

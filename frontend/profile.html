@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage your VendorMart profile and view past orders.">
+    <title>My Profile | VendorMart</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand">VendorMart</a>
+        <div class="nav-links" id="nav-container" style="display: flex; gap: 1rem; align-items: center;">
+            <div id="guest-links">
+                <a href="login.html">Login / Register</a>
+            </div>
+            <div id="user-links" class="hidden" style="display: flex; gap: 1rem; align-items: center;">
+                <span id="user-name" style="font-weight: 600; color: var(--primary); cursor: pointer;" onclick="window.location.href='profile.html'"></span>
+                <a href="wishlist.html">❤️ Wishlist</a>
+                <a href="orders.html">📦 Orders</a>
+                <button onclick="logout()" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 9999px;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Profile Header -->
+        <div class="profile-header" style="background: white; padding: 2.5rem; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); margin-bottom: 2rem; display: flex; align-items: center; gap: 2rem; animation: slideUp 0.5s ease-out;">
+            <div class="profile-avatar" style="width: 80px; height: 80px; background: var(--gradient-primary); border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; font-weight: 800; text-transform: uppercase;" id="avatar-initials">
+                U
+            </div>
+            <div>
+                <h1 id="profile-name" style="margin: 0; font-size: 2rem; color: var(--primary);">User Name</h1>
+                <p id="profile-email" style="color: var(--text-muted); margin-top: 0.3rem;">user@example.com</p>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                    <span style="padding: 0.4rem 1rem; background: #f3f4f6; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Verified User</span>
+                    <span style="padding: 0.4rem 1rem; background: #ecfdf5; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600; color: #059669;">Active Member</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem;">
+            <span style="font-size: 1.5rem;">📜</span>
+            <h2 style="margin: 0;">Past Orders</h2>
+        </div>
+        
+        <div id="orders-list">
+            <!-- Orders load here -->
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 VendorMart — Compare. Save. Shop Local.</p>
+    </footer>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) window.location.href = "login.html";
+
+        // Fill Profile Info
+        document.getElementById("profile-name").textContent = user.username;
+        document.getElementById("profile-email").textContent = user.email;
+        document.getElementById("avatar-initials").textContent = user.username.charAt(0);
+
+        async function loadOrders() {
+            try {
+                const res = await fetch(`http://localhost:5000/orders/${user.user_id}`);
+                const orders = await res.json();
+                renderOrders(orders);
+            } catch (err) {
+                console.error("Load orders error:", err);
+                document.getElementById("orders-list").innerHTML = `<p style="text-align: center; color: var(--text-muted);">Unable to load orders.</p>`;
+            }
+        }
+
+        function renderOrders(orders) {
+            const container = document.getElementById("orders-list");
+            if (!orders.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🛍️</div>
+                        <h3>No Past Orders</h3>
+                        <p>Start shopping to see your history here.</p>
+                        <button onclick="window.location.href='index.html'">Shop Now</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const statusSteps = ["CONFIRMED", "READY FOR PICKUP", "PICKED UP"];
+
+            container.innerHTML = "";
+            orders.forEach((o, idx) => {
+                let currentIndex = 1; 
+                if (o.delivery_status === 'DELIVERED') currentIndex = 2;
+                else if (o.delivery_status === 'SHIPPED' || o.delivery_status === 'PENDING') currentIndex = 1;
+                else currentIndex = 0;
+
+                const card = `
+                    <div class="order-card" style="animation-delay: ${idx * 0.1}s; margin-bottom: 1rem; border-left: 5px solid var(--primary);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h3 style="margin: 0;">Order #${o.order_id}</h3>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.3rem 0;">Date: ${o.order_date}</p>
+                                <p style="font-size: 0.9rem; color: var(--text-main);">Vendor: <strong>${o.vendor_name}</strong></p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.2rem; font-weight: 800; color: var(--primary);">₹${o.total_amount.toLocaleString()}</div>
+                                <div style="margin-top: 0.5rem;">
+                                    <span style="font-size: 0.7rem; padding: 0.2rem 0.5rem; background: #e0f2fe; color: #0369a1; border-radius: 4px; font-weight: 700;">${o.payment_method || 'UPI'}</span>
+                                    <span style="font-size: 0.7rem; padding: 0.2rem 0.5rem; background: #dcfce7; color: #16a34a; border-radius: 4px; font-weight: 700;">${o.payment_status || 'PAID'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        loadOrders();
+    </script>
+</body>
+</html>

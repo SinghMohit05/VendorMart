@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VendorMart Admin Dashboard - Manage vendors, view sales analytics and more.">
+    <title>Admin Dashboard | VendorMart</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar">
+        <a href="admin.html" class="brand">VendorMart Admin</a>
+        <div class="nav-links">
+            <span id="admin-name" style="font-weight: 600; color: var(--primary);">Admin</span>
+            <button onclick="adminLogout()" style="background: transparent; color: var(--primary); border: 2px solid rgba(108, 63, 232, 0.2); box-shadow: none;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.3rem;">
+                    <span style="font-size: 2rem;">📊</span>
+                    <h1 style="margin: 0;">Performance Dashboard</h1>
+                </div>
+                <p style="color: var(--text-muted);">Real-time vendor sales and ratings</p>
+            </div>
+            <button onclick="showAddVendorModal()" style="padding: 0.8rem 2rem; border-radius: 9999px; font-size: 0.95rem;">+ Add New Vendor</button>
+        </div>
+
+        <!-- Stats Overview Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+            <div class="stat-card">
+                <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Total Vendors</p>
+                <h2 id="stat-total-vendors" style="font-size: 2.8rem; margin: 0.5rem 0; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">0</h2>
+                <span style="font-size: 0.8rem; color: var(--text-light);">Active partners</span>
+            </div>
+            <div class="stat-card">
+                <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Total Revenue</p>
+                <h2 id="stat-total-revenue" style="font-size: 2.8rem; margin: 0.5rem 0; color: var(--secondary);">₹0</h2>
+                <span style="font-size: 0.8rem; color: var(--text-light);">Lifetime earnings</span>
+            </div>
+            <div class="stat-card">
+                <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Total Items Sold</p>
+                <h2 id="stat-total-sold" style="font-size: 2.8rem; margin: 0.5rem 0; color: var(--accent-orange);">0</h2>
+                <span style="font-size: 0.8rem; color: var(--text-light);">Units fulfilled</span>
+            </div>
+        </div>
+
+        <!-- Vendor Detail Table -->
+        <div class="auth-card" style="max-width: 100%; padding: 2rem; overflow-x: auto; border-radius: var(--radius-xl);">
+            <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">🏪 Vendor Breakdown</h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color);">
+                        <th style="padding: 1rem;">Vendor</th>
+                        <th style="padding: 1rem;">Shop Name</th>
+                        <th style="padding: 1rem;">Total Sales</th>
+                        <th style="padding: 1rem;">Revenue</th>
+                        <th style="padding: 1rem;">Rating</th>
+                    </tr>
+                </thead>
+                <tbody id="vendor-stats-body">
+                    <!-- Loaded via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 VendorMart — Admin Dashboard</p>
+    </footer>
+
+    <!-- Add Vendor Modal Overlay -->
+    <div id="vendorModal" class="hidden" style="position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div style="position: absolute; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(8px);" onclick="hideAddVendorModal()"></div>
+        <div class="auth-card" style="position: relative; max-width: 500px; z-index: 10000; animation: modalSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: var(--radius-xl);">
+            <h2 style="margin-top: 0;">Add New Vendor</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <input id="v-name" placeholder="Vendor Name">
+                <input id="v-shop" placeholder="Shop Name">
+            </div>
+            <input id="v-phone" placeholder="Phone Number" type="number">
+            <input id="v-email" placeholder="Email Address">
+            <input id="v-address" placeholder="Physical Address">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem; font-weight: 500;">City</label>
+                <select id="v-city" style="width: 100%; padding: 0.85rem; border-radius: var(--radius-md); border: 2px solid var(--border-color); background: white; font-family: 'Poppins', sans-serif; font-size: 0.95rem; transition: all 0.3s;">
+                    <option value="Mumbai">Mumbai</option>
+                    <option value="Bangalore">Bangalore</option>
+                    <option value="Hyderabad">Hyderabad</option>
+                    <option value="Chennai">Chennai</option>
+                </select>
+            </div>
+            <button onclick="handleAddVendor()" style="width: 100%; padding: 1rem; margin-top: 1rem; border-radius: 9999px; font-size: 1rem;">Register Vendor →</button>
+        </div>
+    </div>
+
+    <script>
+        const admin = JSON.parse(localStorage.getItem("admin"));
+        if (!admin) window.location.href = "login.html";
+        
+        document.getElementById("admin-name").innerText = admin.name;
+
+        async function fetchStats() {
+            try {
+                const res = await fetch("http://localhost:5000/admin/stats");
+                const data = await res.json();
+                renderStats(data);
+            } catch (err) {
+                console.error("Failed to fetch stats", err);
+            }
+        }
+
+        function renderStats(data) {
+            const body = document.getElementById("vendor-stats-body");
+            body.innerHTML = "";
+
+            let totalRev = 0;
+            let totalSold = 0;
+
+            data.forEach(v => {
+                totalRev += Number(v.total_revenue || 0);
+                totalSold += Number(v.total_items_sold || 0);
+
+                body.innerHTML += `
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 1.2rem;">
+                            <div style="font-weight: 600;">${v.Vendor_Name}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">${v.Email || 'No email'}</div>
+                        </td>
+                        <td style="padding: 1.2rem;">${v.Shop_Name}</td>
+                        <td style="padding: 1.2rem;">${Number(v.total_items_sold).toLocaleString()} items</td>
+                        <td style="padding: 1.2rem; font-weight: 600;">₹${Number(v.total_revenue).toLocaleString()}</td>
+                        <td style="padding: 1.2rem;">
+                            <span style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; padding: 0.3rem 0.7rem; border-radius: var(--radius-full); font-weight: 700; font-size: 0.85rem;">
+                                ★ ${Number(v.rating).toFixed(1)}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById("stat-total-vendors").innerText = data.length;
+            document.getElementById("stat-total-revenue").innerText = "₹" + totalRev.toLocaleString();
+            document.getElementById("stat-total-sold").innerText = totalSold.toLocaleString();
+        }
+
+        function showAddVendorModal() { document.getElementById("vendorModal").classList.remove("hidden"); }
+        function hideAddVendorModal() { document.getElementById("vendorModal").classList.add("hidden"); }
+
+        async function handleAddVendor() {
+            const vendor = {
+                vendor_name: document.getElementById("v-name").value,
+                shop_name: document.getElementById("v-shop").value,
+                phone: document.getElementById("v-phone").value,
+                email: document.getElementById("v-email").value,
+                address: document.getElementById("v-address").value,
+                city: document.getElementById("v-city").value
+            };
+
+            const res = await fetch("http://localhost:5000/admin/add-vendor", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(vendor)
+            });
+
+            if (res.ok) {
+                alert("Vendor Added Successfully!");
+                hideAddVendorModal();
+                fetchStats();
+                // Clear fields
+                ["v-name","v-shop","v-phone","v-email","v-address"].forEach(id=>document.getElementById(id).value="");
+            } else {
+                const data = await res.json();
+                alert(data.error);
+            }
+        }
+
+        function adminLogout() {
+            localStorage.removeItem("admin");
+            window.location.href = "login.html";
+        }
+
+        fetchStats();
+    </script>
+</body>
+</html>

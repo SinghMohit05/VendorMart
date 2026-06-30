@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your VendorMart Wishlist - Review saved items and checkout.">
+    <title>Wishlist | VendorMart</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand">VendorMart</a>
+        <div class="nav-links" style="display: flex; gap: 1rem; align-items: center;">
+            <div id="guest-links">
+                <a href="login.html">Login / Register</a>
+            </div>
+            <div id="user-links" class="hidden" style="display: flex; gap: 1rem; align-items: center;">
+                <span id="user-name" style="font-weight: 600; color: var(--primary);"></span>
+                <a href="wishlist.html">❤️ Wishlist</a>
+                <a href="orders.html">📦 Orders</a>
+                <button onclick="logout()" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 9999px;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
+            <span style="font-size: 2rem;">❤️</span>
+            <h1 style="margin: 0;">My Wishlist</h1>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Items you've saved from local vendors</p>
+        <div id="list"></div>
+
+        <!-- Checkout Overlay Modal -->
+        <div id="checkoutModal" class="hidden" style="position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;">
+            
+            <div style="position: absolute; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(8px);" onclick="closeCheckoutModal()"></div>
+            
+            <div style="position: relative; background: white; padding: 2.5rem; border-radius: var(--radius-xl); width: 90%; max-width: 450px; box-shadow: var(--shadow-xl); z-index: 10000; animation: modalSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border: 1px solid var(--border-color);">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0; font-size: 1.5rem;">💳 Checkout</h2>
+                    <button onclick="closeCheckoutModal()" style="background: none; color: var(--text-muted); border: none; font-size: 1.5rem; padding: 0.2rem; margin: 0; box-shadow: none;">&times;</button>
+                </div>
+                
+                <div id="checkoutSummary">
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Payment Method</label>
+                        <select id="paymentMethod" style="width: 100%; padding: 0.85rem; border-radius: var(--radius-md); border: 2px solid var(--border-color); font-size: 1rem; outline: none; font-family: 'Poppins', sans-serif; transition: all 0.3s;">
+                            <option value="Card">Credit / Debit Card</option>
+                            <option value="UPI">UPI / BHIM</option>
+                            <option value="COD">Cash on Delivery</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Delivery Address</label>
+                        <textarea id="deliveryAddress" rows="2" style="width: 100%; padding: 0.85rem; border-radius: var(--radius-md); border: 2px solid var(--border-color); font-family: 'Poppins', sans-serif; font-size: 0.95rem; outline: none; resize: none; transition: all 0.3s;" placeholder="123 Main Street..."></textarea>
+                    </div>
+
+                    <div style="background: var(--bg-color); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color);">
+                        <span style="font-weight: 600; color: var(--text-muted);">Total Amount</span>
+                        <span id="checkoutTotalDisplay" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">₹0</span>
+                    </div>
+                </div>
+
+                <button id="payBtn" onclick="confirmPurchase()" style="width: 100%; padding: 1rem; font-size: 1.1rem; border-radius: 9999px;">
+                    ✅ Confirm & Pay
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 VendorMart — Compare. Save. Shop Local.</p>
+    </footer>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem("user"));
+        let currentWishlistItems = [];
+
+        async function load() {
+            // Re-init app to ensure navbar is updated (app.js handle user-name click)
+            if (typeof updateNavbar === 'function') updateNavbar();
+            
+            if (!user || !user.user_id) {
+                document.getElementById("list").innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔒</div>
+                        <h3>Please Log In</h3>
+                        <p>Sign in to view and manage your wishlist.</p>
+                        <button onclick="window.location.href='login.html'">Login →</button>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const res = await fetch(`http://localhost:5000/wishlist/${user.user_id}`);
+                const items = await res.json();
+                currentWishlistItems = items;
+                const container = document.getElementById("list");
+                
+                if (items.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">💭</div>
+                            <h3>Your Wishlist is Empty</h3>
+                            <p>Start adding products you love!</p>
+                            <button onclick="window.location.href='index.html'">Browse Products →</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; background: var(--gradient-primary); padding: 1.8rem 2rem; border-radius: var(--radius-xl); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 8px 30px rgba(108, 63, 232, 0.3);">
+                        <div>
+                            <h2 style="color: white; margin: 0; font-size: 1.3rem;">Ready to buy? 🛒</h2>
+                            <p style="opacity: 0.85; font-size: 0.95rem;">You have ${items.length} items saved.</p>
+                        </div>
+                        <button onclick="openCheckoutModal()" style="background: white; color: var(--primary); font-size: 1rem; padding: 0.8rem 1.8rem; border-radius: 9999px; font-weight: 700;">
+                            Checkout All Items →
+                        </button>
+                    </div>
+                `;
+
+                items.forEach((p, idx) => {
+                    container.innerHTML += `
+                <div class="product-card" style="position: relative; animation-delay: ${idx * 0.08}s; padding-top: 1.5rem;">
+                    <div style="background: var(--gradient-primary); width: 100%; height: 4px; position: absolute; top: 0; left: 0;"></div>
+                    <h3>${p.name}</h3>
+                    <div style="font-weight: 700; color: var(--primary); margin: 0.5rem 1.5rem; font-size: 1.2rem;">₹${p.final_price}</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted); margin: 0 1.5rem 0.5rem 1.5rem;">Quantity: <strong>${p.quantity}</strong></div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Picked from: <strong>${p.vendor_name}</strong></p>
+                    <button onclick="remove(${p.item_id})" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; margin-top: auto;">🗑️ Remove</button>
+                </div>
+            `;
+                });
+            } catch (err) {
+                console.error("Wishlist load error:", err);
+                document.getElementById("list").innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h3>Connection Error</h3>
+                        <p>Unable to fetch your wishlist. Is the server running?</p>
+                        <button onclick="load()">🔄 Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        async function remove(itemId) {
+            await fetch(`http://localhost:5000/wishlist/${itemId}`, {
+                method: "DELETE"
+            });
+
+            showToast('Item removed', 'success');
+            load();
+        }
+
+        // ================= CHECKOUT MODAL LOGIC =================
+        function openCheckoutModal() {
+            const total = currentWishlistItems.reduce((sum, item) => sum + (item.final_price * item.quantity), 0);
+            const totalDisplay = document.getElementById('checkoutTotalDisplay');
+            if (totalDisplay) {
+                totalDisplay.innerText = `₹${total.toLocaleString()}`;
+            }
+            document.getElementById('checkoutModal').classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkoutModal').classList.add('hidden');
+        }
+
+        async function confirmPurchase() {
+            const btn = document.getElementById('payBtn');
+            const summary = document.getElementById('checkoutSummary');
+            const method = document.getElementById('paymentMethod').value;
+            
+            btn.innerHTML = 'Processing... 🔄';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch("http://localhost:5000/checkout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        user_id: user.user_id,
+                        payment_method: method
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    summary.innerHTML = `
+                        <div style="text-align: center; padding: 2rem 0;">
+                            <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+                            <h2 style="color: var(--secondary);">Order Placed Successfully!</h2>
+                            <p>${data.message}</p>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 1rem;">Redirecting to orders...</p>
+                        </div>
+                    `;
+                    btn.style.display = 'none';
+
+                    setTimeout(() => {
+                        window.location.href = "orders.html";
+                    }, 2500);
+                } else {
+                    alert(data.error || "Checkout failed");
+                    btn.innerHTML = "Confirm & Pay";
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                alert("Connection error");
+                btn.innerHTML = "Confirm & Pay";
+                btn.disabled = false;
+            }
+        }
+        load();
+    </script>
+</body>
+</html>

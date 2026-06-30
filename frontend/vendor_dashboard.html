@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Dashboard | VendorMart</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand">VendorMart</a>
+        <div id="vendor-info" style="display: flex; gap: 1.5rem; align-items: center; margin-left: auto;">
+            <div style="text-align: right;">
+                <div id="shop-name" style="font-weight: 700; color: var(--primary);">Shop Name</div>
+                <div id="vendor-email" style="font-size: 0.75rem; color: var(--text-muted);">email@example.com</div>
+            </div>
+            <button onclick="vendorLogout()" style="padding: 0.5rem 1.2rem; font-size: 0.85rem; border-radius: var(--radius-full); background: var(--bg-dark);">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 1rem;">
+            <div style="display: flex; gap: 2rem;">
+                <button id="tab-orders" class="active-tab" onclick="switchTab('orders')" style="background: none; border: none; padding: 0.5rem 0; font-weight: 700; color: var(--primary); border-bottom: 3px solid var(--primary); border-radius: 0; cursor: pointer; font-size: 1.1rem; box-shadow: none;">📦 Orders</button>
+                <button id="tab-inventory" onclick="switchTab('inventory')" style="background: none; border: none; padding: 0.5rem 0; font-weight: 600; color: var(--text-muted); border-bottom: 3px solid transparent; border-radius: 0; cursor: pointer; font-size: 1.1rem; box-shadow: none;">🏷️ My Inventory</button>
+            </div>
+            <button onclick="openAddProductModal()" style="background: var(--gradient-primary); padding: 0.8rem 1.5rem; font-size: 0.9rem; border-radius: var(--radius-md); font-weight: 700; display: flex; align-items: center; gap: 0.5rem; margin-bottom: -0.5rem;">
+                <span>+</span> Add Product to Shop
+            </button>
+        </div>
+
+        <div id="orders-view">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div>
+                    <h2 style="margin: 0;">Order Management</h2>
+                    <p style="color: var(--text-muted);">Manage incoming pickup requests for your shop</p>
+                </div>
+                <div style="background: white; padding: 0.8rem 1.5rem; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); text-align: center;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Incoming Orders</div>
+                    <div id="order-count" style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">0</div>
+                </div>
+            </div>
+
+            <div id="vendor-orders-list" style="display: flex; flex-direction: column; gap: 1.2rem;">
+                <!-- Orders will load here -->
+            </div>
+        </div>
+
+        <div id="inventory-view" class="hidden">
+            <h2 style="margin-bottom: 0.5rem;">My Inventory</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Products currently listed in your shop</p>
+            <div id="inventory-list" class="products-grid">
+                <!-- Inventory will load here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="addProductModal" class="rating-modal">
+        <div class="rating-modal-overlay" onclick="closeAddProductModal()"></div>
+        <div class="rating-modal-content" style="max-width: 500px; text-align: left;">
+            <button class="rating-close" onclick="closeAddProductModal()">&times;</button>
+            <h2 style="margin-bottom: 0.5rem;">Add Product to Shop</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Select a product from the catalog and set your price.</p>
+            
+            <form id="addProductForm">
+                <div class="input-group">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">Select Product</label>
+                    <select id="masterProductSelect" required style="width: 100%; padding: 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-family: inherit;">
+                        <option value="">Loading products...</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">Price (₹)</label>
+                        <input type="number" id="productPrice" placeholder="e.g. 199" required min="1">
+                    </div>
+                    <div class="input-group">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">Initial Stock</label>
+                        <input type="number" id="productStock" placeholder="e.g. 50" required min="1">
+                    </div>
+                </div>
+
+                <button type="submit" style="width: 100%; margin-top: 1rem; background: var(--gradient-primary); padding: 1rem;">Confirm & Add to Inventory</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 VendorMart — Vendor Dashboard</p>
+    </footer>
+
+    <script>
+        const vendor = JSON.parse(localStorage.getItem('vendor'));
+        if (!vendor) window.location.href = 'vendor_login.html';
+
+        document.getElementById('shop-name').textContent = vendor.shop_name;
+        document.getElementById('vendor-email').textContent = vendor.email;
+
+        function vendorLogout() {
+            localStorage.removeItem('vendor');
+            window.location.href = 'vendor_login.html';
+        }
+
+        // ================= TAB SWITCHING =================
+        function switchTab(tab) {
+            const ordersTab = document.getElementById('tab-orders');
+            const inventoryTab = document.getElementById('tab-inventory');
+            const ordersView = document.getElementById('orders-view');
+            const inventoryView = document.getElementById('inventory-view');
+
+            if (tab === 'orders') {
+                ordersTab.classList.add('active-tab');
+                ordersTab.style.color = 'var(--primary)';
+                ordersTab.style.borderBottomColor = 'var(--primary)';
+                inventoryTab.classList.remove('active-tab');
+                inventoryTab.style.color = 'var(--text-muted)';
+                inventoryTab.style.borderBottomColor = 'transparent';
+                ordersView.classList.remove('hidden');
+                inventoryView.classList.add('hidden');
+                loadVendorOrders();
+            } else {
+                inventoryTab.classList.add('active-tab');
+                inventoryTab.style.color = 'var(--primary)';
+                inventoryTab.style.borderBottomColor = 'var(--primary)';
+                ordersTab.classList.remove('active-tab');
+                ordersTab.style.color = 'var(--text-muted)';
+                ordersTab.style.borderBottomColor = 'transparent';
+                inventoryView.classList.remove('hidden');
+                ordersView.classList.add('hidden');
+                loadVendorInventory();
+            }
+        }
+
+        // ================= INVENTORY LOGIC =================
+        async function loadVendorInventory() {
+            const container = document.getElementById('inventory-list');
+            try {
+                const res = await fetch(`http://localhost:5000/vendor/inventory/${vendor.vendor_id}`); 
+                const inventory = await res.json();
+                
+                if (inventory.length === 0) {
+                    container.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><h3>No products yet</h3><p>Use the 'Add Product' button to populate your shop.</p></div>`;
+                    return;
+                }
+
+                container.innerHTML = inventory.map(item => `
+                    <div class="product-card" style="padding-top: 1.5rem; opacity: 1; transform: none;">
+                        <div style="background: var(--gradient-primary); width: 100%; height: 4px; position: absolute; top: 0; left: 0;"></div>
+                        <div style="font-size: 0.7rem; color: var(--primary); text-transform: uppercase; font-weight: 700; margin: 0 1.5rem 0.5rem;">${item.category}</div>
+                        <h3>${item.name}</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 1.5rem;">
+                            <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">₹${item.price}</div>
+                            <div style="font-size: 0.85rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: ${item.stock > 10 ? '#f0fdf4' : '#fff7ed'}; color: ${item.stock > 10 ? '#16a34a' : '#c2410b'}; font-weight: 700;">
+                                ${item.stock} in stock
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                showToast('Error loading inventory', 'error');
+            }
+        }
+
+        async function openAddProductModal() {
+            document.getElementById('addProductModal').classList.add('show');
+            
+            // Load master products if not loaded
+            const select = document.getElementById('masterProductSelect');
+            if (select.options.length <= 1) {
+                try {
+                    const res = await fetch('http://localhost:5000/master-products');
+                    const products = await res.json();
+                    select.innerHTML = '<option value="">-- Choose a Product --</option>';
+                    products.forEach(p => {
+                        select.innerHTML += `<option value="${p.id}">${p.name} (${p.category})</option>`;
+                    });
+                } catch (err) {
+                    showToast('Error loading catalog', 'error');
+                }
+            }
+        }
+
+        function closeAddProductModal() {
+            document.getElementById('addProductModal').classList.remove('show');
+        }
+
+        document.getElementById('addProductForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button');
+            const payload = {
+                vendor_id: vendor.vendor_id,
+                product_id: document.getElementById('masterProductSelect').value,
+                price: document.getElementById('productPrice').value,
+                stock: document.getElementById('productStock').value
+            };
+
+            submitBtn.innerText = 'Adding...';
+            submitBtn.disabled = true;
+
+            try {
+                const res = await fetch('http://localhost:5000/vendor/add-product', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('Product added to your shop!', 'success');
+                    closeAddProductModal();
+                    e.target.reset();
+                    if (!document.getElementById('inventory-view').classList.contains('hidden')) {
+                        loadVendorInventory();
+                    }
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (err) {
+                showToast('Server error', 'error');
+            } finally {
+                submitBtn.innerText = 'Confirm & Add to Inventory';
+                submitBtn.disabled = false;
+            }
+        };
+
+        async function loadVendorOrders() {
+            try {
+                const res = await fetch(`http://localhost:5000/vendor/orders/${vendor.vendor_id}`);
+                const orders = await res.json();
+                renderVendorOrders(orders);
+            } catch (err) {
+                showToast('Error loading orders', 'error');
+            }
+        }
+
+        function renderVendorOrders(orders) {
+            const container = document.getElementById('vendor-orders-list');
+            document.getElementById('order-count').textContent = orders.length;
+
+            if (orders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 4rem; background: white; border-radius: var(--radius-xl); border: 1px solid var(--border-color);">
+                        <div class="empty-state-icon">📭</div>
+                        <h3>No Orders Yet</h3>
+                        <p>When customers place orders for your shop, they will appear here.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = "";
+            orders.forEach((o, idx) => {
+                let statusBadge = '';
+                let actionBtn = '';
+
+                if (o.delivery_status === 'PENDING') {
+                    statusBadge = '<span style="background: #fff7ed; color: #c2410b; padding: 0.3rem 0.8rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; border: 1px solid #fed7aa;">NEW ORDER</span>';
+                    actionBtn = `<button onclick="updateStatus(${o.order_id}, 'SHIPPED')" style="background: var(--gradient-primary);">Confirm & Prepare</button>`;
+                } else if (o.delivery_status === 'SHIPPED') {
+                    statusBadge = '<span style="background: #ecfdf5; color: #059669; padding: 0.3rem 0.8rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; border: 1px solid #a7f3d0;">READY FOR PICKUP</span>';
+                    actionBtn = `<button onclick="updateStatus(${o.order_id}, 'DELIVERED')" style="background: var(--bg-dark);">Mark as Picked Up</button>`;
+                } else {
+                    statusBadge = '<span style="background: #f3f4f6; color: #4b5563; padding: 0.3rem 0.8rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; border: 1px solid #e5e7eb;">COMPLETED</span>';
+                    actionBtn = '<div style="color: #059669; font-weight: 700; font-size: 0.9rem;">✓ Order Picked Up</div>';
+                }
+
+                const card = `
+                    <div class="order-card" style="animation-delay: ${idx * 0.05}s; background: white; padding: 1.8rem; border-radius: var(--radius-xl); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 250px;">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.8rem;">
+                                <h3 style="margin: 0;">Order #${o.order_id}</h3>
+                                ${statusBadge}
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Customer</div>
+                                    <div style="font-weight: 600;">${o.customer_name}</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-muted);">${o.customer_phone}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Expected Pickup</div>
+                                    <div style="font-weight: 600;">${o.expected_date}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="text-align: right; min-width: 150px;">
+                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">₹${o.total_amount.toLocaleString()}</div>
+                            ${actionBtn}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        async function updateStatus(orderId, newStatus) {
+            try {
+                const res = await fetch(`http://localhost:5000/vendor/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (res.ok) {
+                    showToast('Status updated successfully', 'success');
+                    loadVendorOrders();
+                } else {
+                    showToast('Error updating status', 'error');
+                }
+            } catch (err) {
+                showToast('Connection error', 'error');
+            }
+        }
+
+        loadVendorOrders();
+    </script>
+</body>
+</html>

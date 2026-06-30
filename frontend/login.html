@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Login or create an account on VendorMart to start comparing local vendor prices.">
+    <title>Login | VendorMart</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand">VendorMart</a>
+        <div class="nav-links" style="display: flex; gap: 1rem; align-items: center;">
+            <div id="guest-links">
+                <a href="login.html">Login / Register</a>
+            </div>
+            <div id="user-links" class="hidden" style="display: flex; gap: 1rem; align-items: center;">
+                <span id="user-name" style="font-weight: 600; color: var(--primary);"></span>
+                <a href="wishlist.html">❤️ Wishlist</a>
+                <a href="orders.html">📦 Orders</a>
+                <button onclick="logout()" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 9999px;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-wrapper">
+        <div style="text-align: center; margin-bottom: 0.5rem;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔐</div>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Welcome back! Sign in to continue.</p>
+        </div>
+
+        <div class="auth-card">
+            <h2><span id="login-title">Login</span></h2>
+            <input id="email" placeholder="📧  Email address" type="email"><br>
+            <input id="password" placeholder="🔑  Password" type="password"><br>
+            <button id="login-btn" onclick="login()">Login →</button>
+            <p id="toggle-admin" style="margin-top: 1.2rem; font-size: 0.9rem; cursor: pointer; color: var(--primary); font-weight: 500; text-align: center; transition: all 0.3s;" onclick="toggleAdminView()">
+                Login as Admin
+            </p>
+        </div>
+
+        <div class="auth-card">
+            <h3>Create Account</h3>
+            <input id="name" placeholder="👤  Full Name"><br>
+            <input id="reg_email" placeholder="📧  Email address" type="email"><br>
+            <input id="reg_password" placeholder="🔑  Password" type="password"><br>
+            <button onclick="register()">Register →</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 VendorMart — Compare. Save. Shop Local.</p>
+    </footer>
+
+    <script>
+        let isAdminView = false;
+
+        function toggleAdminView() {
+            isAdminView = !isAdminView;
+            const title = document.getElementById("login-title");
+            const toggleText = document.getElementById("toggle-admin");
+            const registerCard = document.querySelector(".auth-card:last-child");
+
+            if (isAdminView) {
+                title.innerText = "Admin Login";
+                toggleText.innerText = "Switch to Customer Login";
+                registerCard.style.display = "none";
+            } else {
+                title.innerText = "Login";
+                toggleText.innerText = "Login as Admin";
+                registerCard.style.display = "block";
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            const endpoint = isAdminView ? "/admin/login" : "/login";
+            
+            try {
+                const res = await fetch(`http://localhost:5000${endpoint}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    if (isAdminView) {
+                        localStorage.setItem("admin", JSON.stringify(data.admin));
+                        window.location.href = "admin.html";
+                    } else {
+                        localStorage.setItem("user", JSON.stringify(data.user));
+                        window.location.href = "index.html";
+                    }
+                } else {
+                    alert(data.error);
+                }
+            } catch (err) {
+                alert("Connection Error. Is the backend running?");
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById("name").value;
+            const email = document.getElementById("reg_email").value;
+            const password = document.getElementById("reg_password").value;
+
+            const res = await fetch("http://localhost:5000/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await res.json();
+            alert(data.message || data.error);
+        }
+    </script>
+
+</body>
+</html>
