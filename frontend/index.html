@@ -1,121 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="VendorMart - Compare local vendor prices, find best deals and shop smart from nearby stores.">
-    <title>Products | VendorMart</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="app.js" defer></script>
-</head>
-<body>
-    <!-- Splash Screen -->
-    <div id="splashScreen">
-        <div class="splash-content">
-            <h1 class="splash-logo">VendorMart</h1>
-            <p class="splash-subtitle">Find the Best Local Prices</p>
-        </div>
-    </div>
-
-    <!-- Navbar -->
-    <nav class="navbar">
-        <a href="index.html" class="brand">VendorMart</a>
-        
-        <div class="location-selector">
-            <span style="font-size: 1.1rem;">📍</span>
-            <select id="userCity" onchange="changeCity(this.value)" style="border: none; background: transparent; font-weight: 600; color: var(--text-main); font-family: inherit; font-size: 0.9rem; cursor: pointer; outline: none;">
-                <option value="Mumbai">Mumbai</option>
-                <option value="Bangalore">Bangalore</option>
-                <option value="Hyderabad">Hyderabad (Coming Soon)</option>
-                <option value="Chennai">Chennai</option>
-            </select>
-        </div>
-
-        <div class="nav-links" style="display: flex; gap: 1rem; align-items: center; margin-left: auto;">
-            <div id="guest-links">
-                <a href="login.html">Login / Register</a>
-            </div>
-            <div id="user-links" class="hidden" style="display: flex; gap: 1rem; align-items: center;">
-                <span id="user-name" style="font-weight: 600; color: var(--primary);"></span>
-                <a href="wishlist.html">❤️ Wishlist</a>
-                <a href="orders.html">📦 Orders</a>
-                <button onclick="logout()" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 9999px;">Logout</button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="hero-section" id="hero">
-        <div class="hero-content">
-            <h2 class="hero-title">Find the <span class="highlight">Best Local Prices</span> Near You</h2>
-            <p class="hero-subtitle">Compare prices across multiple local vendors in your city. Save money on every purchase with VendorMart's smart comparison engine.</p>
-            <a href="#productsSection" class="hero-cta">
-                Explore Products ↓
-            </a>
-            <div class="hero-stats">
-                <div class="hero-stat">
-                    <div class="hero-stat-number">500+</div>
-                    <div class="hero-stat-label">Products</div>
-                </div>
-                <div class="hero-stat">
-                    <div class="hero-stat-number">50+</div>
-                    <div class="hero-stat-label">Local Vendors</div>
-                </div>
-                <div class="hero-stat">
-                    <div class="hero-stat-number">3</div>
-                    <div class="hero-stat-label">Cities</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Main Content -->
-    <div class="container" id="productsSection">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-            <h1 style="margin: 0;">All Products</h1>
-            <div class="search-filter-bar">
-                <div class="search-wrapper">
-                    <input type="text" id="searchInput" placeholder="Search products..." onkeyup="filterAndRenderProducts()">
-                </div>
-                <select id="sortSelect" onchange="filterAndRenderProducts()" class="sort-select">
-                    <option value="default">Sort Options</option>
-                    <option value="price_asc">Price: Low to High</option>
-                    <option value="price_desc">Price: High to Low</option>
-                    <option value="rating_desc">Rating: High to Low</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Dynamic Category Pills -->
-        <div id="categoryTabs" style="display: flex; gap: 0.8rem; overflow-x: auto; padding-bottom: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); scrollbar-width: none;">
-            <!-- Rendered via JS -->
-        </div>
-
-        <div id="products"></div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <p>© 2026 VendorMart — Compare. Save. Shop Local.</p>
-    </footer>
-
-    <!-- Vendor Selection Modal -->
-    <div id="vendorModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 id="modalProductName" style="margin: 0;">Select Vendor</h2>
-                <span class="close" onclick="closeVendorModal()">&times;</span>
-            </div>
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Choose which local shop to add to your wishlist:</p>
-            <div id="vendorOptions" style="display: flex; flex-direction: column; gap: 1rem;">
-                <!-- Vendors will be injected here -->
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Initialization handled by app.js correctly.
-    </script>
-
-</body>
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F46E5'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="VendorMart - Smart Local Shopping & Vendor Price Comparison. Find the lowest local prices, compare nearby vendors, and shop smart in your city." />
+    <meta name="keywords" content="local shopping, price comparison, groceries, local vendors, best deals, Mumbai, Bangalore, Delhi, Chennai, Hyderabad, Pune" />
+    <meta name="theme-color" content="#4F46E5" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <title>VendorMart — Smart Local Shopping & Vendor Price Comparison</title>
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-indigo-500 selection:text-white min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

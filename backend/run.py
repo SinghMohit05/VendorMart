@@ -14,7 +14,7 @@ app = create_app()
 if __name__ == '__main__':
     port = Config.FLASK_PORT
     print(f"==================================================")
-    print(f" VendorMart Backend running on port {port}")
+    print(f" VendorMart Backend API running on port {port}")
     print(f" Local URL: http://localhost:{port}")
     print(f"==================================================")
     app.run(host='0.0.0.0', port=port, debug=Config.FLASK_DEBUG)

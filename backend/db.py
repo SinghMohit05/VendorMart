@@ -1,14 +1,9 @@
+# Backward-compatible wrapper for app.db
+import sys
 import os
-import pymysql
-from dotenv import load_dotenv
 
-load_dotenv()
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
-def get_db_connection():
-    return pymysql.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-        cursorclass=pymysql.cursors.DictCursor
-    )
+from app.db import get_db_connection
